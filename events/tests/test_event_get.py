@@ -241,7 +241,7 @@ def test_address_locality_filter(api_client, event, event2, place, place2):
 
 
 @pytest.mark.django_db
-def test_address_publication_status_filter(api_client, event, event2, user, organization, data_source):
+def test_publication_status_filter(api_client, event, event2, user, organization, data_source):
     event.publication_status = PublicationStatus.PUBLIC
     event.save()
 
