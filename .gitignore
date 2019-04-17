@@ -15,3 +15,4 @@ media/
 data/
 .pytest_cache/
 templates/rest_framework/*
+venv
