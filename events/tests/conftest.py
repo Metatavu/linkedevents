@@ -221,6 +221,41 @@ def administrative_division2(administrative_division_type):
 
 @pytest.mark.django_db
 @pytest.fixture
+def place_dict(data_source, organization):
+    return {
+        'data_source': data_source.id,
+        'origin_id': 'testi-1234',
+        'publisher': organization.id,
+        'position': {
+            'type': 'Point',
+            'coordinates': [
+                384574.0894343857,
+                6672362.664316102
+            ]
+        },
+        'email': 'testi@example.com',
+        'postal_code': '00100',
+        'name': {
+            'en': 'Test location',
+            'fi': 'Testipaikka'
+        },
+        'description':  {
+            'en': 'Testipaikka - en',
+            'fi': 'Testipaikka - fi'
+        },
+        'street_address': {
+            'en': 'Teststreet 1',
+            'fi': 'Testikuja 1'
+        },
+        'address_locality': {
+            'en': 'Testilä',
+            'fi': 'Testilä'
+        }
+    }
+
+
+@pytest.mark.django_db
+@pytest.fixture
 def place(data_source, organization, administrative_division):
     return Place.objects.create(
         id=data_source.id + ':test_location',
@@ -314,6 +349,20 @@ def draft_event(place, user):
 def location_id(place):
     obj_id = reverse(PlaceSerializer().view_name, kwargs={'pk': place.id})
     return obj_id
+
+
+@pytest.mark.django_db
+@pytest.fixture
+def keyword_dict(data_source, organization):
+    return {
+        'origin_id': 'testi-12345',
+        'data_source': data_source.id,
+        "publisher": organization.id,
+        "name": {
+            "fi": "Testi avainsana",
+            "en": "Test keyword",
+        }
+    }
 
 
 @pytest.mark.django_db

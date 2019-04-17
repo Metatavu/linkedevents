@@ -308,6 +308,24 @@ def test_start_time_and_end_time_validation(api_client, minimal_event_dict, user
 
 
 @pytest.mark.django_db
+def test_start_time_and_end_time_validation_with_past_events_allowed(
+        api_client,
+        minimal_event_dict,
+        user,
+        data_source):
+    api_client.force_authenticate(user)
+
+    data_source.create_past_events = True
+    data_source.save()
+
+    minimal_event_dict['start_time'] = (timezone.now() - timedelta(days=2)).isoformat().replace('+00:00', 'Z')
+    minimal_event_dict['end_time'] = (timezone.now() - timedelta(days=1)).isoformat().replace('+00:00', 'Z')
+
+    response = create_with_post(api_client, minimal_event_dict, data_source)
+    assert_event_data_is_equal(minimal_event_dict, response.data)
+
+
+@pytest.mark.django_db
 def test_description_and_short_description_required_in_name_languages(api_client, minimal_event_dict, user):
     api_client.force_authenticate(user)
 
