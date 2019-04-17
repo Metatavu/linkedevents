@@ -615,8 +615,12 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 raise PermissionDenied()
         else:
             # without api key, the user will have to be admin
-            if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
-                raise PermissionDenied()
+            if hasattr(instance, 'can_be_edited_by'):
+                if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
+                    raise PermissionDenied()
+            else:
+                if not instance.is_user_editable():
+                    raise PermissionDenied()
         validated_data['last_modified_by'] = self.user
 
         if 'id' in validated_data:
@@ -643,7 +647,6 @@ def _clean_qp(query_params):
             query_params[new_key] = query_params[key]
             del query_params[key]
     return query_params
-
 
 def _text_qset_by_translated_field(field, val):
     # Free text search from all languages of the field
