@@ -5,7 +5,7 @@ from leaflet.admin import LeafletGeoAdmin
 from modeltranslation.admin import TranslationAdmin
 from reversion.admin import VersionAdmin
 from events.api import generate_id
-from events.models import Place, License, DataSource
+from events.models import Place, License, DataSource, Keyword, KeywordSet
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -24,8 +24,14 @@ class EventModelAdmin(BaseAdmin, TranslationAdmin, VersionAdmin):
 
 
 class KeywordAdmin(BaseAdmin, TranslationAdmin, VersionAdmin):
-    pass
+    fields = ('id', 'data_source', 'name', 'origin_id', 'publisher', 'alt_labels', 'aggregate', 'deprecated')
 
+admin.site.register(Keyword, KeywordAdmin)
+
+class KeywordSetAdmin(BaseAdmin, TranslationAdmin, VersionAdmin):
+    fields = ('id', 'data_source', 'name', 'origin_id', 'usage', 'organization', 'keywords')
+
+admin.site.register(KeywordSet, KeywordSetAdmin)
 
 class HelsinkiGeoAdmin(LeafletGeoAdmin):
     settings_overrides = {
