@@ -1,25 +1,15 @@
-FROM alpine
+FROM python:3.7.4
 RUN mkdir /app
 WORKDIR /app
 COPY requirements.txt /app/
 COPY docker/start.sh /opt/docker/start.sh
-RUN adduser -D deploy
-RUN apk update
-RUN apk upgrade
-RUN apk --no-cache add \
-    python3 \
-    python3-dev \
-    postgresql-client \
-    postgresql-dev \
-    build-base \
-    libxml2-dev libxslt-dev \
-    gettext jpeg-dev zlib-dev
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
-RUN pip3 install gunicorn
-RUN pip3 install gdal-dev
-RUN apk del -r python3-dev postgresql
 ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update 
+RUN apt-get install --no-install-recommends -y gdal-bin python-gdal python3-gdal
+RUN pip3 install gunicorn
+
+RUN pip3 install -r requirements.txt
 COPY . /app/
 RUN chmod a+x /opt/docker/start.sh
 
