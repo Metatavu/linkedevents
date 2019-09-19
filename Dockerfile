@@ -12,12 +12,12 @@ RUN apk --no-cache add \
     postgresql-client \
     postgresql-dev \
     build-base \
-    gdal-dev \
     libxml2-dev libxslt-dev \
     gettext jpeg-dev zlib-dev
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 RUN pip3 install gunicorn
+RUN pip3 install gdal-dev
 RUN apk del -r python3-dev postgresql
 ENV PYTHONUNBUFFERED 1
 COPY . /app/
