@@ -3,6 +3,7 @@ RUN mkdir /app
 WORKDIR /app
 COPY requirements.txt /app/
 COPY docker/start.sh /opt/docker/start.sh
+COPY docker/local_settings.py /app/
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update 
