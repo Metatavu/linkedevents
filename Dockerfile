@@ -20,5 +20,6 @@ RUN pip3 install gunicorn
 RUN apk del -r python3-dev postgresql
 ENV PYTHONUNBUFFERED 1
 COPY . /app/
+RUN chmod a+x /opt/docker/start.sh
 
 ENTRYPOINT [ "/opt/docker/start.sh" ]
