@@ -13,8 +13,6 @@ RUN pip3 install gunicorn
 RUN rm -f /etc/nginx/sites-enabled/default
 COPY docker/nginx.conf /etc/nginx/sites-enabled/default
 
-RUN update-rc.d nginx defaults
-
 RUN pip3 install -r requirements.txt
 COPY . /app/
 RUN chmod a+x /opt/docker/start.sh
