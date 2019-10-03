@@ -17,6 +17,6 @@ RUN pip3 install -r requirements.txt
 COPY . /app/
 RUN chmod a+x /opt/docker/start.sh
 
-EXPOSE 8000
+EXPOSE 8000 8080
 
 ENTRYPOINT [ "/opt/docker/start.sh" ]
