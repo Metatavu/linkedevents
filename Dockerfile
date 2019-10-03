@@ -14,4 +14,4 @@ RUN pip3 install -r requirements.txt
 COPY . /app/
 RUN chmod a+x /opt/docker/start.sh
 
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/bin/sh" ]
