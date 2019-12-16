@@ -382,6 +382,31 @@ def test_address_locality_filter(api_client, event, event2, place, place2):
     assert len(response.data['data']) == 0
 
 @pytest.mark.django_db
+def test_address_region_filter(api_client, event, event2, place, place2):
+    place.address_region = "TestOneFi"
+    place.save()
+    event.location = place
+    event.save()
+
+    place2.address_region = "TestTwoFi"
+    place2.save()
+    event2.location = place2
+    event2.save()
+
+    response = get_list(api_client, query_string='address_region=TestOneFi')
+    ids = {e['id'] for e in response.data['data']}
+    assert event.id in ids
+    assert event2.id not in ids
+
+    response = get_list(api_client, query_string='address_region=TestOneFi,TestTwoFi')
+    ids = {e['id'] for e in response.data['data']}
+    assert event.id in ids
+    assert event2.id in ids
+
+    response = get_list(api_client, query_string='address_region=NoTRealPlace')
+    assert len(response.data['data']) == 0
+
+@pytest.mark.django_db
 def test_custom_data_filter(api_client, event, event2):
     
     event.custom_data = {"test": "testvalue", "test2": "testvalue2"}
