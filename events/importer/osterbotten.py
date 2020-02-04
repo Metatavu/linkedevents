@@ -5,6 +5,7 @@ import requests_cache
 import pytz
 import time
 import itertools
+import logging 
 from collections import OrderedDict
 from django.db.models import Count
 
@@ -17,6 +18,8 @@ from django_orghierarchy.models import Organization
 from .sync import ModelSyncher
 from .base import Importer, register_importer, recur_dict
 from .util import clean_text, unicodetext, replace_location
+
+logger = logging.getLogger(__name__) 
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -81,7 +84,7 @@ class OsterbottenImporter(Importer):
         return url
 
     def import_events(self):
-        self.logger.info("Importing Osterbotten events")
+        logger.info("Importing Osterbotten events")
         events = recur_dict()
         keyword_matcher = KeywordMatcher()
         for lang, locale in OSTERBOTTEN_PARAMS['languages'].items():
@@ -100,7 +103,7 @@ class OsterbottenImporter(Importer):
         for event in events.values():
             if (event is not None):
                 self.save_event(event)
-        self.logger.info("%d events processed" % len(events.values()))
+        logger.info("%d events processed" % len(events.values()))
 
     def cleanCategory(self, category):
         symbols = ["&", ",", ".", "!"]
