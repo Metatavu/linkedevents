@@ -95,7 +95,8 @@ class OsterbottenImporter(Importer):
                     continue
                 elif len(items) > 0: 
                     for item in items:
-                        self._import_event(lang, item, events, keyword_matcher)
+                        if bool(item.xpath("Municipality")):
+                            self._import_event(lang, item, events, keyword_matcher)
                     organizers = self._import_organizers_from_events(events)
                 else:
                     break
@@ -121,6 +122,7 @@ class OsterbottenImporter(Importer):
 
     def _import_event(self, lang, item, events, keyword_matcher):    
         eid = int(item.xpath('ID')[0].text)
+        logger.info("Processing event with origin_id: %s" % eid)
         event = events[eid]
         event['data_source'] = self.data_source
         event['publisher'] = self.organization
@@ -190,20 +192,19 @@ class OsterbottenImporter(Importer):
                 'data_source_id': 'osterbotten',
                 'publisher': self.organization
             }
-
-            keyword_orig, created = Keyword.objects.get_or_create(**kwargs)
+            if bool(_id):
+                keyword_orig, created = Keyword.objects.get_or_create(**kwargs)
             
-            name_key = 'name_{}'.format(lang)
-            if created:
-                keyword_orig.name = targetGroupText
-                setattr(keyword_orig, name_key, targetGroupText)
-            else:
-                current_name = getattr(keyword_orig, name_key)
-                if not current_name:
+                name_key = 'name_{}'.format(lang)
+                if created:
+                    keyword_orig.name = targetGroupText
                     setattr(keyword_orig, name_key, targetGroupText)
-
-            keyword_orig.save()
-            keywords.append(keyword_orig)
+                else:
+                    current_name = getattr(keyword_orig, name_key)
+                    if not current_name:
+                        setattr(keyword_orig, name_key, targetGroupText)
+                keyword_orig.save()
+                keywords.append(keyword_orig)
 
         if len(keywords) > 0:
             event['keywords'] = keywords
