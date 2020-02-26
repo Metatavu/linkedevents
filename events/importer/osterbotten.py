@@ -198,8 +198,13 @@ class OsterbottenImporter(Importer):
         result['origin_id'] = origin_id
         result['name']['fi'] = place
         result['street_address']['fi'] = address
+        result['street_address']['sv'] = address
+        result['street_address']['en'] = address
         result['postal_code'] = zipCode
         result['address_locality']['fi'] = city
+        result['address_locality']['sv'] = city
+        result['address_locality']['en'] = city
+        result['address_region'] = 'Österbotten'
         result['publisher'] = self.organization
         result['data_source'] = self.data_source
 
