@@ -125,6 +125,8 @@ class OsterbottenImporter(Importer):
         eid = int(item.xpath('ID')[0].text)
         logger.info("Processing event with origin_id: %s" % eid)
         event = events[eid]
+        _id = 'osterbotten:{}'.format(eid)
+        event['id'] = _id
         event['data_source'] = self.data_source
         event['publisher'] = self.organization
         event['origin_id'] = eid
@@ -136,15 +138,15 @@ class OsterbottenImporter(Importer):
         event['info_url'][lang] = item.xpath('Link')[0].text
 
         if (item.xpath('Start')[0].text):
-            startTime = dateutil.parser.parse(item.xpath('End')[0].text)
+            startTime = dateutil.parser.parse(item.xpath('Start')[0].text)
             event['start_time'] = startTime
             event['has_start_time'] = True
 
         if (item.xpath('End')[0].text):
             endTime = dateutil.parser.parse(item.xpath('End')[0].text)
             if (startTime <= endTime):
-                event['start_time'] = endTime
-                event['has_start_time'] = True
+                event['end_time'] = endTime
+                event['has_end_time'] = True
 
         if 'offers' not in event:
             event['offers'] = [recur_dict()]
