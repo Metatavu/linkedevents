@@ -8,9 +8,9 @@ import logging
 import time
 import itertools    
 import json 
-import datetime
 import hashlib
 
+from datetime import datetime
 from html.parser import HTMLParser
 from collections import OrderedDict
 from django.db.models import Count
@@ -33,6 +33,13 @@ MIKKELINYT_BASE_URL = 'http://www.mikkelinyt.fi/json.php'
 MIKKELINYT_API_KEY = os.environ['MIKKELINYT_API_KEY']
 MIKKELINYT_LOCATION = os.environ['MIKKELINYT_LOCATION']
 MIKKELINYT_IMAGE_BASE_URL = 'http://www.mikkelinyt.fi/uploads/savonlinnanyt'
+
+def mark_deleted(obj):
+    if obj.deleted:
+        return False
+    obj.deleted = True
+    obj.save(update_fields=['deleted'])
+    return True
 
 @register_importer
 class MikkeliNytImporter(Importer):
@@ -74,20 +81,25 @@ class MikkeliNytImporter(Importer):
         return result.strip()
     
     def parse_offset_datetime(self, text):
-        return datetime.datetime.strptime(text, '%Y-%m-%d %H:%M:%S').astimezone(self.timezone)
+        return datetime.strptime(text, '%Y-%m-%d %H:%M:%S').astimezone(self.timezone)
 
     def import_events(self):
         logger.info("Importing MikkeliNyt events")
-        events = recur_dict()
         items = self.items_from_url( self.get_url() )
 
         if items is None or len(items) == 0:
             logger.info("Could not parse items, giving up...")
         else:
+            syncher_queryset = Event.objects.filter(end_time__gte=datetime.now(), data_source=self.data_source, deleted=False)
+            self.syncher = ModelSyncher(syncher_queryset, lambda obj: obj.origin_id, delete_func=mark_deleted)
+
             for item in items:
-                self.upsert_event(item, events)
-                
-    def upsert_event(self, item, keywords):
+                event = self.upsert_event(item)
+                self.syncher.mark(event)
+
+            self.syncher.finish()
+
+    def upsert_event(self, item):
         origin_id = item["id"]
         start = self.parse_offset_datetime(item["start"])
         end = self.parse_offset_datetime(item["end"])
@@ -166,7 +178,7 @@ class MikkeliNytImporter(Importer):
             }
         }
 
-        self.save_event(event)
+        return self.save_event(event)
 
     def upsert_keywords(self, categories):
         keywords = []
