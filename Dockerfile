@@ -7,10 +7,12 @@ COPY docker/local_settings.py /app/
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update 
-RUN apt-get install --no-install-recommends -y gdal-bin python-gdal python3-gdal nginx locales
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
+RUN apt-get install --no-install-recommends -y gdal-bin python-gdal python3-gdal nginx
+RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
+ && locale-gen "en_US.UTF-8"
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 RUN pip3 install gunicorn
 
