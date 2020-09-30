@@ -1,0 +1,5 @@
+export DATABASE_HOST=localhost
+export DATABASE_PORT=5433
+export DATABASE_NAME=linkedevents
+export DATABASE_USER=linkedevents
+export DATABASE_PASS=linkedevents
