@@ -3,6 +3,10 @@ import requests
 import requests_cache
 import pytz
 import itertools
+import logging
+import hashlib
+import uuid
+
 from collections import OrderedDict
 
 from lxml import etree
@@ -12,6 +16,8 @@ from events.keywords import KeywordMatcher
 from django_orghierarchy.models import Organization
 
 from .base import Importer, register_importer, recur_dict
+
+logger = logging.getLogger(__name__)
 
 OSTERBOTTEN_BASE_URL = 'https://events.osterbotten.fi/EventService/search'
 OSTERBOTTEN_PARAMS = {
@@ -75,7 +81,7 @@ class OsterbottenImporter(Importer):
         return url
 
     def import_events(self):
-        self.logger.info("Importing Osterbotten events")
+        logger.info("Importing Osterbotten events")
         events = recur_dict()
         keyword_matcher = KeywordMatcher()
         for lang, locale in OSTERBOTTEN_PARAMS['languages'].items():
@@ -94,7 +100,7 @@ class OsterbottenImporter(Importer):
         for event in events.values():
             if (event is not None):
                 self.save_event(event)
-        self.logger.info("%d events processed" % len(events.values()))
+        logger.info("%d events processed" % len(events.values()))
 
     def cleanCategory(self, category):
         symbols = ["&", ",", ".", "!"]
@@ -112,7 +118,10 @@ class OsterbottenImporter(Importer):
 
     def _import_event(self, lang, item, events, keyword_matcher):
         eid = int(item.xpath('ID')[0].text)
+        logger.info("Processing event with origin_id: %s" % eid)
         event = events[eid]
+        _id = 'osterbotten:{}'.format(eid)
+        event['id'] = _id
         event['data_source'] = self.data_source
         event['publisher'] = self.organization
         event['origin_id'] = eid
@@ -124,15 +133,15 @@ class OsterbottenImporter(Importer):
         event['info_url'][lang] = item.xpath('Link')[0].text
 
         if (item.xpath('Start')[0].text):
-            startTime = dateutil.parser.parse(item.xpath('End')[0].text)
+            startTime = dateutil.parser.parse(item.xpath('Start')[0].text)
             event['start_time'] = startTime
             event['has_start_time'] = True
 
         if (item.xpath('End')[0].text):
             endTime = dateutil.parser.parse(item.xpath('End')[0].text)
             if (startTime <= endTime):
-                event['start_time'] = endTime
-                event['has_start_time'] = True
+                event['end_time'] = endTime
+                event['has_end_time'] = True
 
         if 'offers' not in event:
             event['offers'] = [recur_dict()]
@@ -150,92 +159,66 @@ class OsterbottenImporter(Importer):
             categoryText = category.xpath('Name')[0].text
             cleanedCategory = self.cleanCategory(categoryText)
             categorywords = cleanedCategory.split(' ')
-
             for categoryWord in categorywords:
-                _id = 'osterbotten:{}'.format(categoryWord.replace('/', '_'))
-
-                kwargs = {
-                    'id': _id,
-                    'data_source_id': 'osterbotten',
-                    'name': categoryWord,
-                    'origin_id': category.xpath('ID')[0].text,
-                    'publisher': self.organization
-                }
-
-                if (not self.keywordExists(_id)):
-                    keyword_orig = Keyword.objects.get_or_create(**kwargs)
-                else:
-                    keyword_orig = self.getKeyword(_id)
-
-                keywords.append(keyword_orig)
+                category_origin_id = 'category_{}'.format(category.xpath('ID')[0].text)
+                keywords.append(self.upsert_keyword(lang, category_origin_id, categoryWord))
 
         targetGroups = item.xpath('TargetGroups')[0]
-
         for targetGroup in targetGroups:
             targetGroupText = targetGroup.xpath('Name')[0].text
-            _id = 'osterbotten:{}'.format(targetGroupText)
+            target_group_origin_id = 'target_{}'.format(targetGroup.xpath('ID')[0].text)
+            keywords.append(self.upsert_keyword(lang, target_group_origin_id, targetGroupText))
 
-            kwargs = {
-                'id': _id,
-                'origin_id': targetGroup.xpath('ID')[0].text,
-                'data_source_id': 'osterbotten',
-                'publisher': self.organization
-            }
+        place = item.xpath('Place')[0].text
+        if not place:
+            logger.info("Missing place name from event, using random uuid instead")
+            place = str(uuid.uuid4())
 
-            keyword_orig, created = Keyword.objects.get_or_create(**kwargs)
-
-            name_key = 'name_{}'.format(lang)
-            if created:
-                keyword_orig.name = targetGroupText
-                setattr(keyword_orig, name_key, targetGroupText)
-            else:
-                current_name = getattr(keyword_orig, name_key)
-                if not current_name:
-                    setattr(keyword_orig, name_key, targetGroupText)
-
-            keyword_orig.save()
-            keywords.append(keyword_orig)
+        location_origin_id = hashlib.md5(place.encode('utf-8')).hexdigest()
+        address = item.xpath('PostalAddress')[0].text
+        city = item.xpath('PostalOffice')[0].text
+        place = item.xpath('Place')[0].text
+        zipCode = item.xpath('PostalCode')[0].text
+        event['location'] = self.upsert_place(lang, location_origin_id, address, city, place, zipCode)
 
         if len(keywords) > 0:
             event['keywords'] = keywords
 
-        if 'location' not in event:
-            event['location'] = recur_dict()
-
-        event['location']['street_address'] = item.xpath('PostalAddress')[0].text
-        event['location']['postal_code'] = item.xpath('PostalCode')[0].text
-        event['location']['address_locality'] = item.xpath('Municipality')[0].text
-        event['location']['publisher'] = self.organization
-        event['location']['data_source'] = self.data_source
-
-        if self.placeExists(item.xpath('Municipality')[0].get("id")):
-            event['location']['id'] = 'osterbotten:' + item.xpath('Municipality')[0].get("id")
-        else:
-            self.createPlace(item.xpath('Municipality')[0].get("id"), item.xpath('Municipality')[0].text)
-
         return event
 
-    def createPlace(self, origin_id, name):
-        obj = {
-            'origin_id': origin_id,
-            'id': 'osterbotten:' + origin_id,
-            'publisher': self.organization,
-            'data_source': self.data_source
-        }
+    def upsert_place(self, lang, origin_id, address, city, place, zipCode):
+        result = recur_dict()
+        _id = 'osterbotten:{}'.format(origin_id)
 
-        municipalitiesObj = {}
+        try:
+            existing_place = Place.objects.get(id=_id).__dict__
 
-        for lang, locale in OSTERBOTTEN_PARAMS['languages'].items():
-            municipalitiesObj[lang] = self.municipalities_from_url(
-                'https://events.osterbotten.fi/EventService/municipalities?Locale=' + locale)
+            for lang in self.supported_languages:
+                result['name'][lang] = existing_place['name_{}'.format(lang)]
+                result['street_address'][lang] = existing_place['street_address_{}'.format(lang)]
+                result['address_locality'][lang] = existing_place['address_locality_{}'.format(lang)]
+        except Place.DoesNotExist:
+            pass
 
-        for lang, municipalitiesByLanguage in municipalitiesObj.items():
-            for municipality in municipalitiesByLanguage:
-                if municipality.xpath('ID')[0].text == origin_id:
-                    obj['name_' + lang] = municipality.xpath('Name')[0].text
-                    break
-        place = Place(**obj)
-        place.save()
+        result['id'] = _id
+        result['origin_id'] = origin_id
+        result['name'][lang] = place
+        result['street_address'][lang] = address
+        result['postal_code'] = zipCode
+        result['address_locality'][lang] = city
+        result['address_region'] = 'Österbotten'
+        result['publisher'] = self.organization
+        result['data_source'] = self.data_source
+
+        self.save_place(result)
+
+        return result
+
+    def getKeyword(self, _id):
+        keywords = Keyword.objects.filter(id__exact='%s' % _id).order_by('id')
+        keyword = keywords.first()
+
+        return keyword
 
     def keywordExists(self, _id):
         keywords = Keyword.objects.filter(id__exact='%s' % _id).order_by('id')
@@ -245,17 +228,29 @@ class OsterbottenImporter(Importer):
             return False
         return True
 
-    def getKeyword(self, _id):
-        keywords = Keyword.objects.filter(id__exact='%s' % _id).order_by('id')
-        keyword = keywords.first()
+    def upsert_keyword(self, lang, origin_id, name):
+        if not origin_id:
+            origin_id = str(uuid.uuid4())
+            logger.info("Missing origin id from keyword, using random uuid instead")
 
-        return keyword
+        _id = 'osterbotten:{}'.format(origin_id)
+        if not self.keywordExists(_id):
+            kwargs = {
+                'id': _id,
+                'data_source_id': self.data_source,
+                'origin_id': origin_id,
+                'publisher': self.organization
+            }
 
-    def placeExists(self, origin_id):
-        municipalityId = 'osterbotten:' + origin_id
-        places = Place.objects.filter(id__exact='%s' % municipalityId).order_by('id')
-        place = places.first()
+            try:
+                existing_keyword = Keyword.objects.get(id=_id).__dict__
+                for language in self.supported_languages:
+                    kwargs['name_{}'.format(language)] = existing_keyword['name_{}'.format(language)]
+            except Keyword.DoesNotExist:
+                pass
 
-        if not place:
-            return False
-        return True
+            kwargs['name_{}'.format(lang)] = name
+
+            Keyword.objects.get_or_create(**kwargs)
+
+        return self.getKeyword(_id)
