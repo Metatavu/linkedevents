@@ -3,6 +3,7 @@ import requests
 import requests_cache
 import pytz
 import itertools
+import logging
 from collections import OrderedDict
 
 from lxml import etree
@@ -12,6 +13,8 @@ from events.keywords import KeywordMatcher
 from django_orghierarchy.models import Organization
 
 from .base import Importer, register_importer, recur_dict
+
+logger = logging.getLogger(__name__)
 
 OSTERBOTTEN_BASE_URL = 'https://events.osterbotten.fi/EventService/search'
 OSTERBOTTEN_PARAMS = {
@@ -75,7 +78,7 @@ class OsterbottenImporter(Importer):
         return url
 
     def import_events(self):
-        self.logger.info("Importing Osterbotten events")
+        logger.info("Importing Osterbotten events")
         events = recur_dict()
         keyword_matcher = KeywordMatcher()
         for lang, locale in OSTERBOTTEN_PARAMS['languages'].items():
@@ -94,7 +97,7 @@ class OsterbottenImporter(Importer):
         for event in events.values():
             if (event is not None):
                 self.save_event(event)
-        self.logger.info("%d events processed" % len(events.values()))
+        logger.info("%d events processed" % len(events.values()))
 
     def cleanCategory(self, category):
         symbols = ["&", ",", ".", "!"]
@@ -124,14 +127,14 @@ class OsterbottenImporter(Importer):
         event['info_url'][lang] = item.xpath('Link')[0].text
 
         if (item.xpath('Start')[0].text):
-            startTime = dateutil.parser.parse(item.xpath('End')[0].text)
+            startTime = dateutil.parser.parse(item.xpath('Start')[0].text)
             event['start_time'] = startTime
             event['has_start_time'] = True
 
         if (item.xpath('End')[0].text):
             endTime = dateutil.parser.parse(item.xpath('End')[0].text)
             if (startTime <= endTime):
-                event['start_time'] = endTime
+                event['end_time'] = endTime
                 event['has_start_time'] = True
 
         if 'offers' not in event:
@@ -163,7 +166,7 @@ class OsterbottenImporter(Importer):
                 }
 
                 if (not self.keywordExists(_id)):
-                    keyword_orig = Keyword.objects.get_or_create(**kwargs)
+                    keyword_orig, created = Keyword.objects.get_or_create(**kwargs)
                 else:
                     keyword_orig = self.getKeyword(_id)
 
@@ -212,6 +215,8 @@ class OsterbottenImporter(Importer):
             event['location']['id'] = 'osterbotten:' + item.xpath('Municipality')[0].get("id")
         else:
             self.createPlace(item.xpath('Municipality')[0].get("id"), item.xpath('Municipality')[0].text)
+            
+            event['location']['id'] = 'osterbotten:' + item.xpath('Municipality')[0].get("id")
 
         return event
 
