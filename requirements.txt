@@ -80,6 +80,7 @@ urllib3==1.25.9           # via elasticsearch, requests, sentry-sdk
 webencodings==0.5.1       # via bleach
 whitenoise==5.1.0         # via -r requirements.in
 zipp==3.1.0               # via importlib-metadata
+django-debug-toolbar==3.1.1  # manually
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
