@@ -32,7 +32,7 @@ from django_orghierarchy.models import Organization
 from haystack.query import AutoQuery
 from isodate import Duration, duration_isoformat, parse_duration
 from modeltranslation.translator import NotRegistered, translator
-from munigeo.api import (GeoModelAPIView, GeoModelSerializer,
+from munigeo.api import (GeoModelAPIView,
                          build_bbox_filter, srid_to_srs)
 from munigeo.models import AdministrativeDivision
 from rest_framework import (filters, generics, mixins, permissions, relations,
@@ -1029,7 +1029,7 @@ def filter_division(queryset, name, value):
             return queryset.filter(**{name + '__name__in': names})
 
 
-class PlaceSerializer(EditableLinkedEventsObjectSerializer, GeoModelSerializer):
+class PlaceSerializer(EditableLinkedEventsObjectSerializer):
     id = serializers.CharField(required=False)
     origin_id = serializers.CharField(required=False)
     data_source = serializers.PrimaryKeyRelatedField(queryset=DataSource.objects.all(),
