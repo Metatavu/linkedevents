@@ -84,7 +84,6 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
 
     def get_jwt_value(self, request):
         auth = authentication.get_authorization_header(request).split()
-
         if not auth or smart_text(auth[0]).lower() != self.auth_scheme.lower():
             return None
 
@@ -116,9 +115,10 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
             raise exceptions.AuthenticationFailed('Invalid payload. family_name missing')
 
         organization, _ = Organization.objects.get_or_create(
+            parent_id=data_source.owner.id,
             origin_id="oidc:user:" + sub,
             data_source=data_source,
-            name=sub,
+            name=sub
         )
 
         try:
