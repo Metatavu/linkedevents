@@ -15,6 +15,7 @@ from functools import partial
 import bleach
 import django_filters
 import pytz
+from django.contrib.gis.db import models as gis_models
 from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.cache import caches
@@ -32,8 +33,8 @@ from django_orghierarchy.models import Organization
 from haystack.query import AutoQuery
 from isodate import Duration, duration_isoformat, parse_duration
 from modeltranslation.translator import NotRegistered, translator
-from munigeo.api import (GeoModelAPIView,
-                         build_bbox_filter, srid_to_srs)
+from munigeo.api import (GeoModelAPIView, geom_to_json,
+                         build_bbox_filter, srid_to_srs, DEFAULT_SRS)
 from munigeo.models import AdministrativeDivision
 from rest_framework import (filters, generics, mixins, permissions, relations,
                             serializers, status, viewsets)
@@ -435,7 +436,7 @@ class TranslatedModelSerializer(serializers.ModelSerializer):
 
         # add translated fields to the final result
         data.update(extra_fields)
-
+        
         return data
 
     def translated_fields_to_representation(self, obj, ret):
@@ -1049,6 +1050,28 @@ class PlaceSerializer(EditableLinkedEventsObjectSerializer):
         if 'publisher' not in validated_data:
             validated_data['publisher'] = self.publisher
         return super().create(validated_data)
+
+    def to_representation(self, obj):
+        # SRS is deduced in ViewSet and passed from there
+        self.srs = self.context.get('srs', DEFAULT_SRS)
+        ret = super().to_representation(obj)
+        if obj is None:
+            return ret
+        geo_fields = []
+        model = self.Meta.model
+        model_fields = [f.name for f in model._meta.fields]
+        for field_name in model_fields:
+            field = model._meta.get_field(field_name)
+            if not isinstance(field, gis_models.GeometryField):
+                continue
+            geo_fields.append(field_name)
+        for field_name in geo_fields:
+            val = getattr(obj, field_name)
+            if val is None:
+                ret[field_name] = None
+                continue
+            ret[field_name] = geom_to_json(val, self.srs)
+        return ret
 
     class Meta:
         model = Place
