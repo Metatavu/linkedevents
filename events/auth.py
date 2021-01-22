@@ -124,22 +124,19 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
 
         try:
             user = User.objects.get(email=email)
-            return user
         except User.DoesNotExist:
-            pass
-
-        user = User.objects.create(
-            email=email,
-            password=make_password(None),
-            is_superuser=False,
-            is_staff=False,
-            is_active=True,
-            date_joined=datetime.utcnow(),
-            uuid=str(uuid.uuid4()),
-            username=email,
-            first_name=first_name,
-            last_name=last_name
-        )
+            user = User.objects.create(
+                email=email,
+                password=make_password(None),
+                is_superuser=False,
+                is_staff=False,
+                is_active=True,
+                date_joined=datetime.utcnow(),
+                uuid=str(uuid.uuid4()),
+                username=email,
+                first_name=first_name,
+                last_name=last_name
+            )
 
         users_organizations = user.admin_organizations.all()
 
