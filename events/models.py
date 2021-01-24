@@ -409,6 +409,12 @@ class KeywordSet(BaseModel, ImageMixin):
             raise ValidationError(_("KeywordSet can't have deprecated keywords"))
         super().save(*args, **kwargs)
 
+    def can_be_edited_by(self, user):
+        """Check if current keyword set can be edited by the given user"""
+        if user.is_superuser:
+            return True
+        return user.is_admin(self.organization)
+
 
 class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMixin):
     objects = BaseTreeQuerySet.as_manager()

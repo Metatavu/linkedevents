@@ -932,6 +932,10 @@ class KeywordSetSerializer(EditableLinkedEventsObjectSerializer):
             validated_data['id'] = generate_id(self.data_source)
         return super().create(validated_data)
 
+    def update(self, request, *args, **kwargs):
+        self.data_source, self.organization = get_authenticated_data_source_and_publisher(self.request)
+        return super().update(request, *args, **kwargs)
+
     class Meta:
         model = KeywordSet
         fields = '__all__'
@@ -944,6 +948,7 @@ class KeywordSetViewSet(JSONAPIViewMixin, mixins.ListModelMixin, mixins.CreateMo
 
 class KeywordSetRetrieveViewSet(JSONAPIViewMixin,
                                 mixins.RetrieveModelMixin,
+                                mixins.UpdateModelMixin,
                                 viewsets.GenericViewSet):
     queryset = KeywordSet.objects.all()
     serializer_class = KeywordSetSerializer
