@@ -944,6 +944,7 @@ class KeywordSetViewSet(JSONAPIViewMixin, mixins.ListModelMixin, mixins.CreateMo
 
 class KeywordSetRetrieveViewSet(JSONAPIViewMixin,
                                 mixins.RetrieveModelMixin,
+                                mixins.UpdateModelMixin,
                                 viewsets.GenericViewSet):
     queryset = KeywordSet.objects.all()
     serializer_class = KeywordSetSerializer
