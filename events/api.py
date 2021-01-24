@@ -923,8 +923,6 @@ class KeywordSetSerializer(EditableLinkedEventsObjectSerializer):
         serializer=KeywordSerializer, many=True, required=True, allow_empty=False,
         view_name='keyword-detail', queryset=Keyword.objects.all())
     usage = EnumChoiceField(KeywordSet.USAGES)
-    publisher = serializers.PrimaryKeyRelatedField(queryset=Organization.objects.all(),
-                                                   required=False, allow_null=True)
     created_time = DateTimeField(default_timezone=pytz.UTC, required=False, allow_null=True)
     last_modified_time = DateTimeField(default_timezone=pytz.UTC, required=False, allow_null=True)
 

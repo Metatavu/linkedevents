@@ -413,7 +413,7 @@ class KeywordSet(BaseModel, ImageMixin):
         """Check if current keyword set can be edited by the given user"""
         if user.is_superuser:
             return True
-        return user.is_admin(self.publisher)
+        return user.is_admin(self.organization)
 
 
 class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMixin):
