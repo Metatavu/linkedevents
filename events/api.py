@@ -935,7 +935,6 @@ class KeywordSetSerializer(EditableLinkedEventsObjectSerializer):
         return super().create(validated_data)
 
     def update(self, request, *args, **kwargs):
-       TÄHÄ
         self.data_source, self.organization = get_authenticated_data_source_and_publisher(self.request)
         return super().update(request, *args, **kwargs)
 
