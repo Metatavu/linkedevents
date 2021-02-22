@@ -108,13 +108,9 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
             raise exceptions.AuthenticationFailed('Invalid payload. email missing')
 
         first_name = payload.get("given_name")
-        if not first_name:
-            raise exceptions.AuthenticationFailed('Invalid payload. first_name missing')
-
+        
         last_name = payload.get("family_name")
-        if not last_name:
-            raise exceptions.AuthenticationFailed('Invalid payload. family_name missing')
-
+        
         organization, _ = Organization.objects.get_or_create(
             parent_id=data_source.owner.id,
             origin_id="oidc:user:" + sub,
