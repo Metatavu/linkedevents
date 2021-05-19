@@ -2,7 +2,7 @@ import debug_toolbar
 import environ
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.urls import reverse, path
+from django.urls import reverse
 from django.views.generic import RedirectView
 
 from .api import LinkedEventsAPIRouter
@@ -17,15 +17,12 @@ class RedirectToAPIRootView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         return reverse('api-root', kwargs={'version': 'v1'})
 
-def trigger_error(request):
-    division_by_zero = 1 / 0
 
 urlpatterns = [
     url(r'^(?P<version>(v0.1|v1))/', include(api_router.urls)),
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include('allauth.urls')),
     url(r'^$', RedirectToAPIRootView.as_view()),
-    path('sentry-debug/', trigger_error),
 ]
 
 if env('DEBUG'):
