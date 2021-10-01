@@ -43,6 +43,6 @@ pytz
 rdflib
 requests-cache
 requests>=2.20.0
-sentry-sdk
+sentry-sdk>=1.4.3
 six
 whitenoise
