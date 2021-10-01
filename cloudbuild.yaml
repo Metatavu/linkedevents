@@ -15,7 +15,6 @@ steps:
   - '-c'
   - |
     if [ -n "${_DEPLOYMENT}" ]; then
-      apt update && apt install -y unzip python &&
       apt update &&  apt install -y unzip && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install &&
       aws ecr get-login-password | docker login --username AWS --password-stdin ${_DOCKER_REPO_URL}
       docker push ${_DOCKER_REPO_URL}:$(echo ${BUILD_ID} | cut -b 1-8)
