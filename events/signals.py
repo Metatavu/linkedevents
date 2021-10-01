@@ -25,6 +25,7 @@ def user_post_save(sender, instance, created, **kwargs):
     if created:
         User = get_user_model()
         recipient_list = [item[0] for item in User.objects.filter(is_superuser=True).values_list('email')]
+        recipient_list.append(instance.email)
         notification_type = NotificationType.USER_CREATED
         context = {'user': instance}
         if len(recipient_list) == 0:
