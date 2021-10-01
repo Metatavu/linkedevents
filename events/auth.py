@@ -101,20 +101,15 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
     def get_or_create_user(self, payload, data_source):
         sub = payload.get("sub")
         if not sub:
-            raise  exceptions.AuthenticationFailed('Invalid payload. sub missing')
+            raise exceptions.AuthenticationFailed('Invalid payload. sub missing')
 
         email = payload.get("email")
         if not email:
             raise exceptions.AuthenticationFailed('Invalid payload. email missing')
 
         first_name = payload.get("given_name")
-        if not first_name:
-            raise exceptions.AuthenticationFailed('Invalid payload. first_name missing')
-
         last_name = payload.get("family_name")
-        if not last_name:
-            raise exceptions.AuthenticationFailed('Invalid payload. family_name missing')
-
+        
         organization, _ = Organization.objects.get_or_create(
             parent_id=data_source.owner.id,
             origin_id="oidc:user:" + sub,
@@ -140,7 +135,7 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
                 last_name=last_name
             )
         else:
-            logger.info("OIDC user with email %s already exist" % email)
+            pass
 
         users_organizations = user.admin_organizations.all()
 
@@ -168,25 +163,6 @@ class OIDCAuthentication(JSONWebTokenAuthentication):
                 pass
 
         return None
-
-
-class OIDCAuthenticationUser(get_user_model(), UserModelPermissionMixin):
-    data_source = models.OneToOneField(DataSource, on_delete=models.CASCADE, primary_key=True)
-
-    def get_display_name(self):
-        return 'OIDC user from data source %s' % self.data_source
-
-    def __str__(self):
-        return self.get_display_name()
-
-    def get_default_organization(self):
-        return self.data_source.owner
-
-    @property
-    def organization_memberships(self):
-        if not self.data_source.owner:
-            return Organization.objects.none()
-        return Organization.objects.filter(id=self.data_source.owner.id)
 
 
 class ApiKeyUser(get_user_model(), UserModelPermissionMixin):
