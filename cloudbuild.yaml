@@ -29,7 +29,7 @@ steps:
   - '-c'
   - |
     if [ -n "${_DEPLOYMENT}" ]; then
-      ./aws/install &&
+      ./aws/install -i /usr/local/aws -b /usr/local/bin/aws &&
       aws eks update-kubeconfig --name ${_CLUSTER} --region=${_AWS_DEFAULT_REGION} &&
       kubectl -n ${_NAMESPACE} set image deployment/${_DEPLOYMENT} ${_DEPLOYMENT}=${_DOCKER_REPO_URL}:$(echo ${BUILD_ID} | cut -b 1-8)
     fi
