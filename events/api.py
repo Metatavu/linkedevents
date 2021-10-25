@@ -1971,8 +1971,8 @@ def _filter_event_queryset(queryset, params, srs=None):
     val = params.get('address_region', None)
     if val:
         val = val.split(',')
-        queryset = queryset.filter(location__address_region__in=val
-        
+        queryset = queryset.filter(location__address_region__in=val)
+
     # Filter by custom value key value pairs using : as key value separator
     val = params.get('custom_data', None)
     if val:
