@@ -15,6 +15,8 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 CONFIG_FILE_NAME = "config_dev.toml"
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 
 def get_git_revision_hash() -> str:
     """
