@@ -174,7 +174,7 @@ class OsterbottenImporter(Importer):
             logger.info("Missing place name from event, using random uuid instead")
             place = str(uuid.uuid4())
 
-        location_origin_id = hashlib.md5(place.encode('utf-8')).hexdigest()
+        location_origin_id = 'place_{}'.format(eid)
         address = item.xpath('PostalAddress')[0].text
 
         city = item.xpath('PostalOffice')[0].text
