@@ -198,10 +198,10 @@ class OsterbottenImporter(Importer):
         try:
             existing_place = Place.objects.get(id=_id).__dict__
 
-            for lang in self.supported_languages:
-                result['name'][lang] = existing_place['name_{}'.format(lang)]
-                result['street_address'][lang] = existing_place['street_address_{}'.format(lang)]
-                result['address_locality'][lang] = existing_place['address_locality_{}'.format(lang)]
+            for existing_lang in self.supported_languages:
+                result['name'][existing_lang] = existing_place['name_{}'.format(existing_lang)]
+                result['street_address'][existing_lang] = existing_place['street_address_{}'.format(existing_lang)]
+                result['address_locality'][existing_lang] = existing_place['address_locality_{}'.format(existing_lang)]
         except Place.DoesNotExist:
             pass
 
@@ -215,7 +215,7 @@ class OsterbottenImporter(Importer):
         result['publisher'] = self.organization
         result['data_source'] = self.data_source
 
-        logger.info('Setting address locality ({}) to ${}'.format(lang, city))
+        logger.info('Setting address locality ({}) to {}'.format(lang, city))
 
         self.save_place(result)
 
