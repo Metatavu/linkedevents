@@ -215,6 +215,8 @@ class OsterbottenImporter(Importer):
         result['publisher'] = self.organization
         result['data_source'] = self.data_source
 
+        logger.info('Setting address locality ({}) to ${}'.format(lang, city))
+
         self.save_place(result)
 
         return result
