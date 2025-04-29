@@ -176,7 +176,12 @@ class OsterbottenImporter(Importer):
 
         location_origin_id = hashlib.md5(place.encode('utf-8')).hexdigest()
         address = item.xpath('PostalAddress')[0].text
-        city = item.xpath('Municipality')[0].text
+
+        city = item.xpath('PostalOffice')[0].text
+        municipalities = item.xpath('Municipality')
+        if 0 < len(municipalities):
+            city = municipalities[0].text
+
         place = item.xpath('Place')[0].text
         zipCode = item.xpath('PostalCode')[0].text
         event['location'] = self.upsert_place(lang, location_origin_id, address, city, place, zipCode)
