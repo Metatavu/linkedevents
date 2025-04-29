@@ -118,7 +118,7 @@ class OsterbottenImporter(Importer):
 
     def _import_event(self, lang, item, events, keyword_matcher):
         eid = int(item.xpath('ID')[0].text)
-        logger.info("Processing event with ( %s ) origin_id: %s" % lang, eid)
+        logger.info("Processing event with ( {} ) origin_id: {}".format(lang, eid))
         event = events[eid]
         _id = 'osterbotten:{}'.format(eid)
         event['id'] = _id
