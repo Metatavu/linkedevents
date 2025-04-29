@@ -552,7 +552,7 @@ class Importer(object):
                 verb = "created"
             else:
                 verb = "changed"
-            logger.debug("%s %s" % (obj, verb))
+            logger.info("%s %s" % (obj, verb))
             obj.save()
 
         return obj
